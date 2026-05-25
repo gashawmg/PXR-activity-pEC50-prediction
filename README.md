@@ -35,7 +35,7 @@ What makes PXR especially hard to model is its **exceptionally large and flexibl
 
 ## The Challenge
 
-The **[OpenADMET Blind Challenge](https://huggingface.co/spaces/openadmet/pxr-challenge)** (Octant Bio + UCSF) released the largest uniform-assay PXR dataset ever made public: over 11,000 compounds screened in the same cell-based luciferase reporter system.
+The **<a href="https://huggingface.co/spaces/openadmet/pxr-challenge" target="_blank" rel="noopener noreferrer">OpenADMET Blind Challenge</a>** (Octant Bio + UCSF) released the largest uniform-assay PXR dataset ever made public: over 11,000 compounds screened in the same cell-based luciferase reporter system.
 
 **Assay design:** A chimeric PXR ligand-binding domain fused to a heterologous DNA-binding domain drives a luciferase reporter. A parallel **counter-screen** with a nonsense-mutated chimera filters out false positives (general transcriptional activators, HDAC inhibitors) from true PXR agonists.
 
@@ -110,7 +110,7 @@ ECFP4 fingerprints (2048-bit)
     → t-SNE (perplexity=50, 500 iterations, PCA init)
 ```
 
-**[→ Open interactive t-SNE map](https://gashawmg.github.io/PXR-activity-pEC50-prediction/tsne_interactive_v2.html)**  
+**<a href="https://gashawmg.github.io/PXR-activity-pEC50-prediction/tsne_interactive_v2.html" target="_blank" rel="noopener noreferrer">→ Open interactive t-SNE map</a>**  
 *(Hover over any compound to see its name and predicted pEC50. Viridis colour scale = training pEC50. Blue circles = test compounds.)*
 
 ![t-SNE chemical space](tsne_white.png)
@@ -146,7 +146,7 @@ This result established that ECFP4 fingerprints + classical ML had hit a ceiling
 
 ### Chemprop (2D Message-Passing Neural Network)
 
-[Chemprop](https://github.com/chemprop/chemprop) implements a directed message-passing neural network (D-MPNN) on 2D molecular graphs. We augmented it with **61 PXR-specific physicochemical descriptors** computed via RDKit:
+<a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">Chemprop</a> implements a directed message-passing neural network (D-MPNN) on 2D molecular graphs. We augmented it with **61 PXR-specific physicochemical descriptors** computed via RDKit:
 
 - Lipophilicity & polarity: LogP, TPSA, polar surface ratio, MolMR
 - Shape: Kappa1/2/3, NPR1/NPR2, Asphericity, FractionCSP3
@@ -178,7 +178,7 @@ Smaller validation sets make early stopping unreliable — the model terminates 
 
 ### UniMol (3D Molecular Transformer)
 
-[UniMol](https://github.com/dptech-corp/Uni-Mol) is a universal 3D molecular pretraining framework. It operates on explicit 3D atomic coordinates (ETKDG v3 conformers, hydrogens retained), capturing spatial relationships invisible to 2D graph methods.
+<a href="https://github.com/dptech-corp/Uni-Mol" target="_blank" rel="noopener noreferrer">UniMol</a> is a universal 3D molecular pretraining framework. It operates on explicit 3D atomic coordinates (ETKDG v3 conformers, hydrogens retained), capturing spatial relationships invisible to 2D graph methods.
 
 - **Pretraining:** 200 million molecular conformers (UniMol v2, 84M parameters)
 - **Fine-tuning:** 3,743 competition compounds, 8-fold scaffold CV on Kaggle T4 × 2 GPU
@@ -267,7 +267,7 @@ The gap between our best (MAE 0.4468) and the leaderboard leader (MAE 0.3912) is
 
 ### 3D structure-based modelling
 
-PXR has well-characterised crystal structures with bound ligands (PDB: 1ILG, 1M13, 3CTB, 3HVL and others). Top teams are almost certainly using **[GNINA](https://github.com/gnina/gnina)** — an open-source neural network scoring function that generates docked poses and scores them using a CNN trained on protein-ligand affinity data. Unlike classical AutoDock Vina scores (raw force-field estimates), GNINA produces binding affinity estimates that are semantically comparable to pEC50.
+PXR has well-characterised crystal structures with bound ligands (PDB: 1ILG, 1M13, 3CTB, 3HVL and others). Top teams are almost certainly using **<a href="https://github.com/gnina/gnina" target="_blank" rel="noopener noreferrer">GNINA</a>** — an open-source neural network scoring function that generates docked poses and scores them using a CNN trained on protein-ligand affinity data. Unlike classical AutoDock Vina scores (raw force-field estimates), GNINA produces binding affinity estimates that are semantically comparable to pEC50.
 
 We did try docking: AutoDock Vina scores as an additional descriptor caused rank to drop from 26 to 55. The lesson is that *how* you incorporate docking matters enormously. Vina raw scores add noise; learned scoring functions add signal.
 
@@ -277,7 +277,7 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 
 ### Newer foundation models
 
-[Uni-Mol2](https://arxiv.org/abs/2406.14769) (2024, scaling up to 1.1B parameters) and 3D-aware equivariant networks (MACE-OFF, NequIP) represent the current frontier. With 84M-parameter UniMol v2, we were already using a strong foundation, but the gap suggests the leading teams may be using larger or more recently fine-tuned models.
+<a href="https://arxiv.org/abs/2406.14769" target="_blank" rel="noopener noreferrer">Uni-Mol2</a> (2024, scaling up to 1.1B parameters) and 3D-aware equivariant networks (MACE-OFF, NequIP) represent the current frontier. With 84M-parameter UniMol v2, we were already using a strong foundation, but the gap suggests the leading teams may be using larger or more recently fine-tuned models.
 
 
 ---
@@ -286,21 +286,22 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 
 | File | Description |
 |---|---|
-| [tsne_interactive_v2.html](https://gashawmg.github.io/PXR-activity-pEC50-prediction/tsne_interactive_v2.html) | Interactive Plotly t-SNE map of all 4,652 compounds — hover for name + pEC50 |
+| <a href="https://gashawmg.github.io/PXR-activity-pEC50-prediction/tsne_interactive_v2.html" target="_blank" rel="noopener noreferrer">tsne_interactive_v2.html</a> | Interactive Plotly t-SNE map of all 4,652 compounds — hover for name + pEC50 |
 | [`tsne_white.png`](tsne_white.png) | Static t-SNE figure (white background, print-quality) |
 
 ---
 
 ## References & Resources
 
-- **Challenge:** [OpenADMET PXR Challenge HuggingFace Space](https://huggingface.co/spaces/openadmet/pxr-challenge)
-- **Data:** [HuggingFace dataset: openadmet/pxr-challenge-train-test](https://huggingface.co/datasets/openadmet/pxr-challenge-train-test)
-- **Tutorial:** [OpenADMET PXR Challenge Tutorial (GitHub)](https://github.com/OpenADMET/PXR-Challenge-Tutorial)
-- **Chemprop:** [github.com/chemprop/chemprop](https://github.com/chemprop/chemprop) · [Heid et al., JCIM 2024](https://doi.org/10.1021/acs.jcim.3c01250)
-- **UniMol:** [github.com/dptech-corp/Uni-Mol](https://github.com/dptech-corp/Uni-Mol) · [Zhou et al., ICLR 2023](https://openreview.net/forum?id=6K2RM6wVqKu)
-- **GNINA:** [github.com/gnina/gnina](https://github.com/gnina/gnina) · [McNutt et al., J Cheminform 2021](https://doi.org/10.1186/s13321-021-00522-2)
-- **RDKit:** [www.rdkit.org](https://www.rdkit.org)
+- **Challenge:** <a href="https://huggingface.co/spaces/openadmet/pxr-challenge" target="_blank" rel="noopener noreferrer">OpenADMET PXR Challenge HuggingFace Space</a>
+- **Data:** <a href="https://huggingface.co/datasets/openadmet/pxr-challenge-train-test" target="_blank" rel="noopener noreferrer">HuggingFace dataset: openadmet/pxr-challenge-train-test</a>
+- **Tutorial:** <a href="https://github.com/OpenADMET/PXR-Challenge-Tutorial" target="_blank" rel="noopener noreferrer">OpenADMET PXR Challenge Tutorial (GitHub)</a>
+- **Chemprop:** <a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">github.com/chemprop/chemprop</a> · <a href="https://doi.org/10.1021/acs.jcim.3c01250" target="_blank" rel="noopener noreferrer">Heid et al., JCIM 2024</a>
+- **UniMol:** <a href="https://github.com/dptech-corp/Uni-Mol" target="_blank" rel="noopener noreferrer">github.com/dptech-corp/Uni-Mol</a> · <a href="https://openreview.net/forum?id=6K2RM6wVqKu" target="_blank" rel="noopener noreferrer">Zhou et al., ICLR 2023</a>
+- **GNINA:** <a href="https://github.com/gnina/gnina" target="_blank" rel="noopener noreferrer">github.com/gnina/gnina</a> · <a href="https://doi.org/10.1186/s13321-021-00522-2" target="_blank" rel="noopener noreferrer">McNutt et al., J Cheminform 2021</a>
+- **RDKit:** <a href="https://www.rdkit.org" target="_blank" rel="noopener noreferrer">www.rdkit.org</a>
 
 ---
 
 *Experimental PXR data generated by the team at Octant Bio (Sam Sabaat, Scott Simpkins, Yuning Shen, Bryan Jiang, Henry Chan, Jeff Tang, Ayesha Ghazali, Theo Tarver, Steven Edgar, Dominic Ky, and many others). Crystallographic data determined by Galen Correy, Nikhil Gupta, and the Fraser Lab at UCSF.*
+                                                                                                                                                                                                                                                                                                                                                       
