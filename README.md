@@ -15,8 +15,7 @@
 6. [What We Tried (and What Failed)](#what-we-tried-and-what-failed)  
 7. [Best Ensemble](#best-ensemble)  
 8. [What Top Teams Are Likely Doing Differently](#what-top-teams-are-likely-doing-differently)  
-9. [Phase 2 Plan](#phase-2-plan)  
-10. [Repo Contents](#repo-contents)  
+9. [Repo Contents](#repo-contents)  
 
 ---
 
@@ -97,19 +96,9 @@ We curated 37 ChEMBL PXR compounds with ECFP4 Tanimoto ≥ 0.4 to blind test com
 
 ### Structural coverage of the test set
 
-Before building any model, we mapped the relationship between training and test chemical space using ECFP4 Tanimoto similarity (radius = 2, 2048-bit) against the full `clean_train.csv` (2,948 compounds). A test compound is *covered* if any training compound lies within Tanimoto ≥ 0.4; otherwise it is *truly novel*.
-
-```
-513 test compounds
-├── 504 covered  (98.2%) — at least one training neighbour at Tanimoto ≥ 0.4
-└──   9 novel    ( 1.8%) — no close training analogue (max Tanimoto 0.30–0.40)
-```
-
-This is consistent with the challenge design: the 513 test compounds are Enamine analog expansions of the top 63 training hits, so structural coverage is expected to be high. The mean max-Tanimoto across all test compounds is **0.53**, peaking squarely in the 0.45–0.55 range — exactly matching the distribution shown in the OpenADMET tutorial notebook.
+Before building any model, we mapped the relationship between training and test chemical space using Morgan fingerprint Tanimoto similarity against `clean_train2.csv` (3,743 compounds). This is consistent with the challenge design: the 513 test compounds are Enamine analog expansions of the top 63 training hits, so structural coverage is expected to be high. The mean max-Tanimoto across all test compounds is **0.53**, peaking squarely in the 0.45–0.55 range.
 
 **The challenge here is not structural novelty — it is activity cliffs and potency tail prediction.** Our best Chemprop model produced a test prediction ceiling of **pEC50 = 5.94**, while the training set reaches **7.55**. Only 64 of 3,743 training compounds (1.7%) have pEC50 ≥ 6 — the model has very few high-potency scaffold anchors to extrapolate from, even when test compounds are structurally similar to training.
-
-> **Note on a past analysis error:** An earlier internal analysis mis-classified 235 test compounds as "orphans" because it was computed against an inadvertently small training subset (not the full `clean_train.csv`). All figures and the interactive t-SNE in this repo use the **corrected** labels — 9 truly novel compounds, not 235.
 
 ### Interactive Chemical Space Map (t-SNE)
 
@@ -122,27 +111,11 @@ ECFP4 fingerprints (2048-bit)
 ```
 
 **[→ Open interactive t-SNE map](tsne_interactive_v2.html)**  
-*(Hover over any compound to see its name and predicted pEC50. Viridis colour scale = training pEC50. Blue circles = covered test compounds. Red diamonds = 9 truly novel test compounds.)*
+*(Hover over any compound to see its name and predicted pEC50. Viridis colour scale = training pEC50. Blue circles = test compounds.)*
 
 ![t-SNE chemical space](tsne_white.png)
 
-**Key insight from the t-SNE:** The 9 truly novel compounds are scattered at the edges of the chemical space, as expected. The vast majority of test compounds overlap well with training clusters. The prediction difficulty is concentrated in **potency extrapolation** — predicting fine-grained pEC50 differences within structurally similar analog series — not in structural coverage.
-
-### The 9 truly novel test compounds
-
-| Compound | Max Tanimoto | Category |
-|---|---|---|
-| OADMET-0006246 | 0.299 | Very Novel (< 0.3) |
-| OADMET-0006256 | 0.305 | Novel (0.3–0.4) |
-| OADMET-0006176 | 0.338 | Novel (0.3–0.4) |
-| OADMET-0006113 | 0.357 | Novel (0.3–0.4) |
-| OADMET-0006495 | 0.359 | Novel (0.3–0.4) |
-| OADMET-0006346 | 0.385 | Novel (0.3–0.4) |
-| OADMET-0006123 | 0.391 | Novel (0.3–0.4) |
-| OADMET-0006224 | 0.391 | Novel (0.3–0.4) |
-| OADMET-0006517 | 0.397 | Novel (0.3–0.4) |
-
-> **Novel compounds file:** [`test_novel_9.csv`](test_novel_9.csv) — all 9 truly novel test compounds with max Tanimoto, nearest training neighbour SMILES, and neighbour pEC50.
+**Key insight from the t-SNE:** Test compounds overlap well with training clusters throughout the chemical space. The prediction difficulty is concentrated in **potency extrapolation** — predicting fine-grained pEC50 differences within structurally similar analog series — not in structural coverage.
 
 ---
 
@@ -304,12 +277,28 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 
 [Uni-Mol2](https://arxiv.org/abs/2406.14769) (2024, scaling up to 1.1B parameters) and 3D-aware equivariant networks (MACE-OFF, NequIP) represent the current frontier. With 84M-parameter UniMol v2, we were already using a strong foundation, but the gap suggests the leading teams may be using larger or more recently fine-tuned models.
 
+
 ---
 
-## Phase 2 Plan
+## Repo Contents
 
-Phase 2 opens May 26 when Analog Set 1 pEC50 values are unblinded. The strategy:
+| File | Description |
+|---|---|
+| [`tsne_interactive_v2.html`](tsne_interactive_v2.html) | Interactive Plotly t-SNE map of all 4,652 compounds — hover for name + pEC50 |
+| [`tsne_white.png`](tsne_white.png) | Static t-SNE figure (white background, print-quality) |
 
-1. **Immediately add analog labels to training.** These are labeled compounds drawn from the same test distribution — exactly what the model has been missing. With training now overlapping the test distribution, OOF MAE becomes a reliable guide for the first time.
+---
 
-2. **Retrain Chemprop 10-fold and UniMol 8-fold** on `cle
+## References & Resources
+
+- **Challenge:** [OpenADMET PXR Challenge HuggingFace Space](https://huggingface.co/spaces/openadmet/pxr-challenge)
+- **Data:** [HuggingFace dataset: openadmet/pxr-challenge-train-test](https://huggingface.co/datasets/openadmet/pxr-challenge-train-test)
+- **Tutorial:** [OpenADMET PXR Challenge Tutorial (GitHub)](https://github.com/OpenADMET/PXR-Challenge-Tutorial)
+- **Chemprop:** [github.com/chemprop/chemprop](https://github.com/chemprop/chemprop) · [Heid et al., JCIM 2024](https://doi.org/10.1021/acs.jcim.3c01250)
+- **UniMol:** [github.com/dptech-corp/Uni-Mol](https://github.com/dptech-corp/Uni-Mol) · [Zhou et al., ICLR 2023](https://openreview.net/forum?id=6K2RM6wVqKu)
+- **GNINA:** [github.com/gnina/gnina](https://github.com/gnina/gnina) · [McNutt et al., J Cheminform 2021](https://doi.org/10.1186/s13321-021-00522-2)
+- **RDKit:** [www.rdkit.org](https://www.rdkit.org)
+
+---
+
+*Experimental PXR data generated by the team at Octant Bio (Sam Sabaat, Scott Simpkins, Yuning Shen, Bryan Jiang, Henry Chan, Jeff Tang, Ayesha Ghazali, Theo Tarver, Steven Edgar, Dominic Ky, and many others). Crystallographic data determined by Galen Correy, Nikhil Gupta, and the Fraser Lab at UCSF.*
