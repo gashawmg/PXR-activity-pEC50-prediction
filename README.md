@@ -12,7 +12,7 @@
 3. [Data: From Screen to Model-Ready Set](#data-from-screen-to-model-ready-set)  
 4. [Chemical Space Analysis](#chemical-space-analysis)  
 5. [Models](#models)  
-6. [What We Tried (and What Failed)](#what-we-tried-and-what-failed)  
+6. [What Was Tried (and What Failed)](#what-was-tried-and-what-failed)  
 7. [Best Ensemble](#best-ensemble)  
 8. [What Top Teams Are Likely Doing Differently](#what-top-teams-are-likely-doing-differently)  
 9. [Repo Contents](#repo-contents)  
@@ -72,7 +72,7 @@ selectivity_delta = pEC50(PXR) − pEC50(counter-screen)
 
 ### Finding the right training set
 
-This was the most consequential decision in the project. We tested every threshold:
+This was the most consequential decision in the project. Every threshold was tested systematically:
 
 | Dataset | Compounds | Filter | Leaderboard MAE | Verdict |
 |---|---|---|---|---|
@@ -88,7 +88,7 @@ This was the most consequential decision in the project. We tested every thresho
 
 ### Why external ChEMBL data hurt
 
-We curated 37 ChEMBL PXR compounds with ECFP4 Tanimoto ≥ 0.4 to blind test compounds and added them to training. Leaderboard MAE jumped from 0.4622 to **0.5051** (rank 36 → 80). The reason: ChEMBL PXR measurements span at least 150 different assay protocols, cell lines, and reporter constructs accumulated over two decades. The OpenADMET assay is a single, tightly controlled protocol. Adding cross-assay data introduces systematic offsets that the model learns as real signal — but they are assay artefacts.
+37 ChEMBL PXR compounds with ECFP4 Tanimoto ≥ 0.4 to blind test compounds were curated and added to training. Leaderboard MAE jumped from 0.4622 to **0.5051** (rank 36 → 80). The reason: ChEMBL PXR measurements span at least 150 different assay protocols, cell lines, and reporter constructs accumulated over two decades. The OpenADMET assay is a single, tightly controlled protocol. Adding cross-assay data introduces systematic offsets that the model learns as real signal — but they are assay artefacts.
 
 ---
 
@@ -96,13 +96,13 @@ We curated 37 ChEMBL PXR compounds with ECFP4 Tanimoto ≥ 0.4 to blind test com
 
 ### Structural coverage of the test set
 
-Before building any model, we mapped the relationship between training and test chemical space using Morgan fingerprint Tanimoto similarity against `clean_train2.csv` (3,743 compounds). This is consistent with the challenge design: the 513 test compounds are Enamine analog expansions of the top 63 training hits, so structural coverage is expected to be high. The mean max-Tanimoto across all test compounds is **0.53**, peaking squarely in the 0.45–0.55 range.
+Prior to model development, the relationship between training and test chemical space was mapped using Morgan fingerprint Tanimoto similarity against `clean_train2.csv` (3,743 compounds). This is consistent with the challenge design: the 513 test compounds are Enamine analog expansions of the top 63 training hits, so structural coverage is expected to be high. The mean max-Tanimoto across all test compounds is **0.53**, peaking squarely in the 0.45–0.55 range.
 
-**The challenge here is not structural novelty — it is activity cliffs and potency tail prediction.** Our best Chemprop model produced a test prediction ceiling of **pEC50 = 5.94**, while the training set reaches **7.55**. Only 64 of 3,743 training compounds (1.7%) have pEC50 ≥ 6 — the model has very few high-potency scaffold anchors to extrapolate from, even when test compounds are structurally similar to training.
+**The challenge here is not structural novelty — it is activity cliffs and potency tail prediction.** The best Chemprop model produced a test prediction ceiling of **pEC50 = 5.94**, while the training set reaches **7.55**. Only 64 of 3,743 training compounds (1.7%) have pEC50 ≥ 6 — the model has very few high-potency scaffold anchors to extrapolate from, even when test compounds are structurally similar to training.
 
 ### Interactive Chemical Space Map (t-SNE)
 
-We computed a t-SNE embedding of all 4,652 compounds (training + test) using:
+A t-SNE embedding of all 4,652 compounds (training + test) was computed using:
 
 ```
 ECFP4 fingerprints (2048-bit)
@@ -121,9 +121,9 @@ ECFP4 fingerprints (2048-bit)
 
 ## Models
 
-### Preliminary: Classical ML Baseline (ECFP4 + Meta-Learner)
+### Preliminary: Classical ML Baseline (RDKit Descriptors + ECFP4 + Meta-Learner)
 
-Before building any deep learning pipeline, a classical ML stack was evaluated to establish a competitive baseline. Three models were trained on ECFP4 fingerprints and stacked via a meta-learner:
+Before building any deep learning pipeline, a classical ML stack was evaluated to establish a competitive baseline. Three models were trained on a combined feature set of RDKit physicochemical descriptors and ECFP4 fingerprints, stacked via a meta-learner:
 
 - **LightGBM (LGBM)** — gradient boosting on bit-vector fingerprints
 - **HistGradientBoosting (HGB)** — sklearn's histogram-based boosting
@@ -142,11 +142,11 @@ Before building any deep learning pipeline, a classical ML stack was evaluated t
 
 The leaderboard MAE of **0.5196** was 16% worse than the final deep learning ensemble (0.4468). More telling is the Spearman drop: 0.7258 vs 0.8463 — classical ML struggled to rank compounds correctly within analog series, which is precisely the activity cliff problem that graph neural networks handle better through learned structural representations.
 
-This result established that ECFP4 fingerprints + classical ML had hit a ceiling and motivated the switch to Chemprop D-MPNN and UniMol.
+This result established that RDKit descriptors + ECFP4 fingerprints + classical ML had hit a ceiling and motivated the switch to Chemprop D-MPNN and UniMol.
 
 ### Chemprop (2D Message-Passing Neural Network)
 
-<a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">Chemprop</a> implements a directed message-passing neural network (D-MPNN) on 2D molecular graphs. We augmented it with **61 PXR-specific physicochemical descriptors** computed via RDKit:
+<a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">Chemprop</a> implements a directed message-passing neural network (D-MPNN) on 2D molecular graphs. It was augmented with **61 PXR-specific physicochemical descriptors** computed via RDKit:
 
 - Lipophilicity & polarity: LogP, TPSA, polar surface ratio, MolMR
 - Shape: Kappa1/2/3, NPR1/NPR2, Asphericity, FractionCSP3
@@ -166,7 +166,7 @@ This result established that ECFP4 fingerprints + classical ML had hit a ceiling
 | **OOF MAE** | **0.4420** | |
 | **LB MAE** | **0.4622 (Rank 36)** | |
 
-**Cross-validation fold count matters enormously.** We tested 10, 15, and 20 folds:
+**Cross-validation fold count matters enormously.** Fold counts of 10, 15, and 20 were evaluated:
 
 | Folds | Val set/fold | LB MAE | Rank |
 |---|---|---|---|
@@ -178,7 +178,7 @@ Smaller validation sets make early stopping unreliable — the model terminates 
 
 ### UniMol (3D Molecular Transformer)
 
-<a href="https://github.com/dptech-corp/Uni-Mol" target="_blank" rel="noopener noreferrer">UniMol</a> is a universal 3D molecular pretraining framework. It operates on explicit 3D atomic coordinates (ETKDG v3 conformers, hydrogens retained), capturing spatial relationships invisible to 2D graph methods.
+<a href="https://github.com/deepmodeling/Uni-Mol" target="_blank" rel="noopener noreferrer">UniMol</a> is a universal 3D molecular pretraining framework. It operates on explicit 3D atomic coordinates (ETKDG v3 conformers, hydrogens retained), capturing spatial relationships invisible to 2D graph methods.
 
 - **Pretraining:** 200 million molecular conformers (UniMol v2, 84M parameters)
 - **Fine-tuning:** 3,743 competition compounds, 8-fold scaffold CV on Kaggle T4 × 2 GPU
@@ -188,7 +188,7 @@ The same degradation pattern with fold count appeared: UniMol 12-fold (OOF MAE 0
 
 ---
 
-## What We Tried (and What Failed)
+## What Was Tried (and What Failed)
 
 This section documents every significant experiment, because understanding what *doesn't* work is as important as the final result.
 
@@ -200,7 +200,7 @@ The most important methodological finding was a consistent pattern: **every tech
 
 | Experiment | OOF MAE | LB MAE | Rank | Key lesson |
 |---|---|---|---|---|
-| Classical ML (LGBM+HGB+SVR meta-learner) | n/r | 0.5196 | ~36* | ❌ ECFP4 fingerprints hit a ceiling — motivated switch to GNNs |
+| Classical ML (LGBM+HGB+SVR meta-learner) | n/r | 0.5196 | ~36* | ❌ RDKit descriptors + ECFP4 hit a ceiling — motivated switch to GNNs |
 | v4_3_3 MSE baseline | 0.4420 | 0.4622 | 36 | ✅ Hard ceiling |
 | MAE/L1 loss (v4_3_4) | 0.4369 ↓ | 0.4674 ↑ | 62 | Better OOF, worse LB — MAE loss median-pulls |
 | QuantileTransformer scaler (v4_3_5) | 0.4546 | 0.4748 | 68 | Poor convergence (avg 24 vs 41 epochs) |
@@ -211,7 +211,7 @@ The most important methodological finding was a consistent pattern: **every tech
 
 ### The SC pre-training experiment (v4_3_6) — a cautionary tale
 
-The competition provides `single_concentration.csv`: 21,003 measurements (10,870 unique SMILES) from the primary PXR screen with binary hit/non-hit labels (criterion: log2_fc > 1 AND FDR-adjusted p < 0.05). We hypothesised that pre-training an MPNN binary classifier on this data, then transferring the message-passing weights into a regression fine-tuning run, would give the model prior knowledge of PXR-relevant structural features.
+The competition provides `single_concentration.csv`: 21,003 measurements (10,870 unique SMILES) from the primary PXR screen with binary hit/non-hit labels (criterion: log2_fc > 1 AND FDR-adjusted p < 0.05). The hypothesis was that pre-training an MPNN binary classifier on this data, then transferring the message-passing weights into a regression fine-tuning run, would give the model prior knowledge of PXR-relevant structural features.
 
 The results were sobering:
 
@@ -263,13 +263,13 @@ Net improvement from initial Chemprop baseline to final blend: **~0.023 MAE unit
 
 ## What Top Teams Are Likely Doing Differently
 
-The gap between our best (MAE 0.4468) and the leaderboard leader (MAE 0.3912) is 12.5%. More informatively, their **R² = 0.6634 vs our 0.5459** — they are explaining 11 additional percentage points of variance. This magnitude cannot come from hyperparameter tuning or more data of the same type; it requires capturing a fundamentally different source of molecular signal.
+The gap between the best submission (MAE 0.4468) and the leaderboard leader (MAE 0.3912) is 12.5%. More informatively, the leaderboard leader achieved **R² = 0.6634 vs 0.5459** for the submitted model — an 11 percentage point difference in explained variance. This magnitude cannot come from hyperparameter tuning or more data of the same type; it requires capturing a fundamentally different source of molecular signal.
 
 ### 3D structure-based modelling
 
 PXR has well-characterised crystal structures with bound ligands (PDB: 1ILG, 1M13, 3CTB, 3HVL and others). Top teams are almost certainly using **<a href="https://github.com/gnina/gnina" target="_blank" rel="noopener noreferrer">GNINA</a>** — an open-source neural network scoring function that generates docked poses and scores them using a CNN trained on protein-ligand affinity data. Unlike classical AutoDock Vina scores (raw force-field estimates), GNINA produces binding affinity estimates that are semantically comparable to pEC50.
 
-We did try docking: AutoDock Vina scores as an additional descriptor caused rank to drop from 26 to 55. The lesson is that *how* you incorporate docking matters enormously. Vina raw scores add noise; learned scoring functions add signal.
+Docking was attempted: AutoDock Vina scores used as an additional descriptor caused rank to drop from 26 to 55. The lesson is that *how* docking is incorporated matters enormously. Vina raw scores add noise; learned scoring functions add signal.
 
 ### Multi-task learning (done correctly)
 
@@ -277,7 +277,7 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 
 ### Newer foundation models
 
-<a href="https://arxiv.org/abs/2406.14769" target="_blank" rel="noopener noreferrer">Uni-Mol2</a> (2024, scaling up to 1.1B parameters) and 3D-aware equivariant networks (MACE-OFF, NequIP) represent the current frontier. With 84M-parameter UniMol v2, we were already using a strong foundation, but the gap suggests the leading teams may be using larger or more recently fine-tuned models.
+<a href="https://arxiv.org/abs/2406.14969" target="_blank" rel="noopener noreferrer">Uni-Mol2</a> (2024, scaling up to 1.1B parameters) and 3D-aware equivariant networks (MACE-OFF, NequIP) represent the current frontier. With 84M-parameter UniMol v2, a strong foundation was already in use, but the performance gap suggests the leading teams may be using larger or more recently fine-tuned models.
 
 
 ---
@@ -297,7 +297,7 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 - **Data:** <a href="https://huggingface.co/datasets/openadmet/pxr-challenge-train-test" target="_blank" rel="noopener noreferrer">HuggingFace dataset: openadmet/pxr-challenge-train-test</a>
 - **Tutorial:** <a href="https://github.com/OpenADMET/PXR-Challenge-Tutorial" target="_blank" rel="noopener noreferrer">OpenADMET PXR Challenge Tutorial (GitHub)</a>
 - **Chemprop:** <a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">github.com/chemprop/chemprop</a> · <a href="https://doi.org/10.1021/acs.jcim.3c01250" target="_blank" rel="noopener noreferrer">Heid et al., JCIM 2024</a>
-- **UniMol:** <a href="https://github.com/dptech-corp/Uni-Mol" target="_blank" rel="noopener noreferrer">github.com/dptech-corp/Uni-Mol</a> · <a href="https://openreview.net/forum?id=6K2RM6wVqKu" target="_blank" rel="noopener noreferrer">Zhou et al., ICLR 2023</a>
+- **UniMol:** <a href="https://github.com/deepmodeling/Uni-Mol" target="_blank" rel="noopener noreferrer">github.com/dptech-corp/Uni-Mol</a> · <a href="https://openreview.net/forum?id=6K2RM6wVqKu" target="_blank" rel="noopener noreferrer">Zhou et al., ICLR 2023</a>
 - **GNINA:** <a href="https://github.com/gnina/gnina" target="_blank" rel="noopener noreferrer">github.com/gnina/gnina</a> · <a href="https://doi.org/10.1186/s13321-021-00522-2" target="_blank" rel="noopener noreferrer">McNutt et al., J Cheminform 2021</a>
 - **RDKit:** <a href="https://www.rdkit.org" target="_blank" rel="noopener noreferrer">www.rdkit.org</a>
 
