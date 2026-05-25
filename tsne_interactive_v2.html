@@ -5,15 +5,15 @@
 <title>PXR pEC50 Chemical Space — t-SNE</title>
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
-  body{margin:0;padding:0;background:#0f1117;font-family:"Segoe UI",sans-serif;color:#e0e0e0;}
+  body{margin:0;padding:0;background:#ffffff;font-family:"Segoe UI",sans-serif;color:#333333;}
   #header{padding:18px 24px 8px;}
-  h1{margin:0;font-size:1.35rem;font-weight:600;color:#fff;}
-  p.sub{margin:4px 0 0;font-size:0.82rem;color:#9aa3b2;}
+  h1{margin:0;font-size:1.35rem;font-weight:600;color:#333333;}
+  p.sub{margin:4px 0 0;font-size:0.82rem;color:#666666;}
   #plot{width:100%;height:calc(100vh - 80px);}
-  #stats{position:absolute;top:75px;right:18px;background:rgba(20,24,36,0.92);
+  #stats{position:absolute;top:75px;right:18px;background:rgba(255,255,255,0.92);
           border:1px solid #2a3048;border-radius:8px;padding:10px 14px;
           font-size:0.78rem;z-index:10;line-height:1.7;}
-  #stats b{color:#7ec8e3;}
+  #stats b{color:#E69F00;}
 </style>
 </head>
 <body>
@@ -34,22 +34,22 @@ const traceTest={
   x:test.map(d=>d.x),y:test.map(d=>d.y),mode:'markers',name:'Test compounds',
   text:test.map(d=>`${d.n}<br>Pred pEC50: ${d.p!=null?d.p.toFixed(3):'N/A'}`),
   hovertemplate:'%{text}<extra></extra>',
-  marker:{size:9,color:'#7ec8e3',opacity:0.85,line:{color:'#1a1a2e',width:0.8},symbol:'circle'}
+  marker:{size:10,color:'#E69F00',opacity:0.92,line:{color:'#ffffff',width:1.2},symbol:'circle'}
 };
 const traceTrain={
   x:train.map(d=>d.x),y:train.map(d=>d.y),mode:'markers',name:'Training compounds',
   text:train.map(d=>`${d.n}<br>pEC50: ${d.v!=null?d.v.toFixed(3):'N/A'}`),
   hovertemplate:'%{text}<extra></extra>',
-  marker:{size:5,opacity:0.55,line:{width:0},color:train.map(d=>d.v),
+  marker:{size:5,opacity:0.70,line:{width:0},color:train.map(d=>d.v),
            colorscale:'Viridis',showscale:true,
            colorbar:{title:'pEC50',thickness:14,len:0.5,y:0.25,
-                     tickfont:{color:'#ccc'},titlefont:{color:'#ccc'}}}
+                     tickfont:{color:'#333333'},titlefont:{color:'#333333'}}}
 };
 Plotly.newPlot('plot',[traceTrain,traceTest],{
-  paper_bgcolor:'#0f1117',plot_bgcolor:'#161b2e',font:{color:'#e0e0e0'},
-  xaxis:{title:'t-SNE 1',gridcolor:'#2a3048',zerolinecolor:'#2a3048'},
-  yaxis:{title:'t-SNE 2',gridcolor:'#2a3048',zerolinecolor:'#2a3048'},
-  legend:{bgcolor:'rgba(15,17,23,0.85)',bordercolor:'#2a3048',borderwidth:1,font:{size:11}},
+  paper_bgcolor:'#ffffff',plot_bgcolor:'#ffffff',font:{color:'#333333'},
+  xaxis:{title:'t-SNE 1',gridcolor:'#dddddd',zerolinecolor:'#dddddd'},
+  yaxis:{title:'t-SNE 2',gridcolor:'#dddddd',zerolinecolor:'#dddddd'},
+  legend:{bgcolor:'rgba(255,255,255,0.9)',bordercolor:'#cccccc',borderwidth:1,font:{size:11,color:'#333333'}},
   hovermode:'closest',margin:{t:10,b:50,l:55,r:20}
 },{responsive:true});
 </script>

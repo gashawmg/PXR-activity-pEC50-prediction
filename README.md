@@ -76,7 +76,7 @@ This was the most consequential decision in the project. We tested every thresho
 
 | Dataset | Compounds | Filter | Leaderboard MAE | Verdict |
 |---|---|---|---|---|
-| `clean_train.csv` | 2,948 | delta > 1.5 | — | Starting point |
+| `clean_train.csv` | 2,948 | delta > 1.5 | not submitted | Starting point |
 | **`clean_train2.csv`** | **3,743** | **delta > 0** | **0.4622 (Chemprop)** | ✅ **FINAL** |
 | `clean_train1.csv` | 2,912 | Emax ≥ 0.75 | 0.4674 | ❌ Filter too aggressive |
 | Relaxed (delta ≥ −0.6) | 4,054 | — | 0.4809 | ❌ Non-selective compounds contaminate |
@@ -110,7 +110,7 @@ ECFP4 fingerprints (2048-bit)
     → t-SNE (perplexity=50, 500 iterations, PCA init)
 ```
 
-**[→ Open interactive t-SNE map](tsne_interactive_v2.html)**  
+**[→ Open interactive t-SNE map](https://gashawmg.github.io/PXR-activity-pEC50-prediction/tsne_interactive_v2.html)**  
 *(Hover over any compound to see its name and predicted pEC50. Viridis colour scale = training pEC50. Blue circles = test compounds.)*
 
 ![t-SNE chemical space](tsne_white.png)
@@ -132,11 +132,13 @@ Before building any deep learning pipeline, a classical ML stack was evaluated t
 | Metric | Internal Test | Leaderboard |
 |---|---|---|
 | MAE | 0.500 | 0.5196 |
-| RAE | — | 0.6526 |
+| RAE | n/r | 0.6526 |
 | R² | 0.67 | 0.457 |
-| Spearman ρ | — | 0.7258 |
-| Kendall's τ | — | 0.5280 |
-| **Rank** | — | **~36 (at submission time)** |
+| Spearman ρ | n/r | 0.7258 |
+| Kendall's τ | n/r | 0.5280 |
+| **Rank** | n/r | **~36 (at submission time)** |
+
+*n/r = not recorded at the time of the experiment.*
 
 The leaderboard MAE of **0.5196** was 16% worse than the final deep learning ensemble (0.4468). More telling is the Spearman drop: 0.7258 vs 0.8463 — classical ML struggled to rank compounds correctly within analog series, which is precisely the activity cliff problem that graph neural networks handle better through learned structural representations.
 
@@ -198,14 +200,14 @@ The most important methodological finding was a consistent pattern: **every tech
 
 | Experiment | OOF MAE | LB MAE | Rank | Key lesson |
 |---|---|---|---|---|
-| Classical ML (LGBM+HGB+SVR meta-learner) | — | 0.5196 | ~36* | ❌ ECFP4 fingerprints hit a ceiling — motivated switch to GNNs |
+| Classical ML (LGBM+HGB+SVR meta-learner) | n/r | 0.5196 | ~36* | ❌ ECFP4 fingerprints hit a ceiling — motivated switch to GNNs |
 | v4_3_3 MSE baseline | 0.4420 | 0.4622 | 36 | ✅ Hard ceiling |
 | MAE/L1 loss (v4_3_4) | 0.4369 ↓ | 0.4674 ↑ | 62 | Better OOF, worse LB — MAE loss median-pulls |
 | QuantileTransformer scaler (v4_3_5) | 0.4546 | 0.4748 | 68 | Poor convergence (avg 24 vs 41 epochs) |
 | SC binary pre-training (v4_3_6) | **0.4338** ↓ | **0.4943** ↑ | **108** | Worst experiment — see below |
 | Hand-picked +5 compounds | 0.4396 ↓ | 0.4751 ↑ | 67 | OOF/LB gap = 0.036 — largest observed |
 | + 37 ChEMBL compounds | 0.4463 | 0.5051 | 80 | Assay heterogeneity |
-| Piecewise stretch post-processing | — | always worse | — | Compression is distributional, not calibrational |
+| Piecewise stretch post-processing | n/r | always worse | n/r | Compression is distributional, not calibrational |
 
 ### The SC pre-training experiment (v4_3_6) — a cautionary tale
 
@@ -249,10 +251,10 @@ The third model — UniMol trained on the smaller 2,948-compound set — was ret
 | Metric | Best blend | Chemprop alone | UniMol alone |
 |---|---|---|---|
 | MAE | **0.4468** | 0.4622 | 0.4615 |
-| RAE | **0.5606** | 0.5800 | — |
-| R² | **0.5459** | 0.5117 | — |
+| RAE | **0.5606** | 0.5800 | 0.5793 |
+| R² | **0.5459** | 0.5117 | 0.5515 |
 | Spearman ρ | **0.8463** | 0.8137 | 0.8306 |
-| Kendall's τ | **0.6567** | — | — |
+| Kendall's τ | **0.6567** | 0.6245 | 0.6391 |
 | Rank | **35** | 36 | 33 |
 
 Net improvement from initial Chemprop baseline to final blend: **~0.023 MAE units**, achieved entirely through data curation, architecture selection, hyperparameter optimisation, and ensemble design — no proprietary data, no additional assay measurements.
@@ -261,7 +263,7 @@ Net improvement from initial Chemprop baseline to final blend: **~0.023 MAE unit
 
 ## What Top Teams Are Likely Doing Differently
 
-The gap between our best (MAE 0.4468) and the leaderboard leader (MAE 0.3912) is 12.5%. More informatively, their **R² = 0.6634 vs our 0.5517** — they are explaining 11 additional percentage points of variance. This magnitude cannot come from hyperparameter tuning or more data of the same type; it requires capturing a fundamentally different source of molecular signal.
+The gap between our best (MAE 0.4468) and the leaderboard leader (MAE 0.3912) is 12.5%. More informatively, their **R² = 0.6634 vs our 0.5459** — they are explaining 11 additional percentage points of variance. This magnitude cannot come from hyperparameter tuning or more data of the same type; it requires capturing a fundamentally different source of molecular signal.
 
 ### 3D structure-based modelling
 
@@ -284,7 +286,7 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 
 | File | Description |
 |---|---|
-| [`tsne_interactive_v2.html`](tsne_interactive_v2.html) | Interactive Plotly t-SNE map of all 4,652 compounds — hover for name + pEC50 |
+| [tsne_interactive_v2.html](https://gashawmg.github.io/PXR-activity-pEC50-prediction/tsne_interactive_v2.html) | Interactive Plotly t-SNE map of all 4,652 compounds — hover for name + pEC50 |
 | [`tsne_white.png`](tsne_white.png) | Static t-SNE figure (white background, print-quality) |
 
 ---
