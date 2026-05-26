@@ -1,6 +1,6 @@
 # Predicting PXR Induction Potency — OpenADMET Blind Challenge
 
-> **Phase 1 result:** MAE **0.4468** · RAE **0.5606** · R² **0.5459** · Spearman **0.8463** · Kendall's τ **0.6567** · Rank **35**  
+> **Phase 1 result:** MAE **0.4468** · RAE **0.5606** · R² **0.5459** · Spearman **0.8463** · Kendall's τ **0.6567** · Rank **39**  
 > 3-model ensemble · Chemprop D-MPNN + UniMol 3D transformer · No proprietary data
 
 ---
@@ -14,32 +14,32 @@
 5. [Models](#models)  
 6. [What Was Tried (and What Failed)](#what-was-tried-and-what-failed)  
 7. [Best Ensemble](#best-ensemble)  
-8. [What Top Teams Are Likely Doing Differently](#what-top-teams-are-likely-doing-differently)  
+8. [Conclusion](#conclusion)  
 9. [Repo Contents](#repo-contents)  
 
 ---
 
 ## Why PXR?
 
-The **Pregnane X Receptor (PXR / NR1I2)** is a nuclear hormone receptor that functions as the body's master xenobiotic sensor. When a drug activates PXR, it triggers a cascade that upregulates **CYP3A4** — the enzyme responsible for metabolising roughly half of all marketed drugs. The consequences for a drug candidate are severe:
+The **Pregnane X Receptor (PXR / NR1I2)** is a nuclear receptor that acts as the primary sensor for foreign chemicals entering the body. Upon activation by a drug candidate, PXR translocates to the nucleus and dramatically upregulates **CYP3A4** — the cytochrome P450 enzyme that handles roughly half of all small-molecule drugs in clinical use. For a drug candidate, PXR activation carries three serious consequences:
 
 | Consequence | Mechanism |
 |---|---|
-| **Drug-Drug Interactions (DDIs)** | Accelerated CYP3A4 expression depletes co-administered drugs to sub-therapeutic levels |
-| **Hepatotoxicity** | Increased production of reactive, toxic metabolites |
-| **Chemoresistance** | Enhanced clearance of oncology agents in PXR-expressing tumours |
+| **Drug-Drug Interactions (DDIs)** | Elevated CYP3A4 activity accelerates clearance of co-administered drugs, potentially dropping them below therapeutic thresholds |
+| **Hepatotoxicity** | Increased metabolic flux through CYP3A4 can generate reactive intermediates that damage liver tissue |
+| **Chemoresistance** | In PXR-expressing tumours, enhanced CYP3A4 activity reduces the intracellular concentration of oncology agents |
 
-What makes PXR especially hard to model is its **exceptionally large and flexible ligand-binding pocket** — it accommodates structurally diverse compounds ranging from macrolide antibiotics to steroids to small synthetic fragments. Published ChEMBL data prior to this challenge contained only ~800 high-quality pEC50 measurements from nearly 150 papers, spread across heterogeneous assay formats.
+Modelling PXR activity is challenging for two reasons. First, the receptor's ligand-binding pocket is exceptionally large and conformationally adaptable, allowing it to accommodate structurally unrelated compounds — from macrolide antibiotics to steroidal natural products to synthetic drug fragments. Second, before this challenge, quantitative PXR activity data in the public domain was sparse and heterogeneous: fewer than 800 reliable pEC50 values extracted from roughly 150 publications, each using different cell lines, reporter constructs, and concentration protocols.
 
 ---
 
 ## The Challenge
 
-The **<a href="https://huggingface.co/spaces/openadmet/pxr-challenge" target="_blank" rel="noopener noreferrer">OpenADMET Blind Challenge</a>** (Octant Bio + UCSF) released the largest uniform-assay PXR dataset ever made public: over 11,000 compounds screened in the same cell-based luciferase reporter system.
+The **<a href="https://huggingface.co/spaces/openadmet/pxr-challenge" target="_blank" rel="noopener noreferrer">OpenADMET Blind Challenge</a>** (Octant Bio + UCSF) addresses this data scarcity directly by releasing the largest uniform-assay PXR activity dataset to date: over 11,000 compounds tested in a single, standardised cell-based system.
 
-**Assay design:** A chimeric PXR ligand-binding domain fused to a heterologous DNA-binding domain drives a luciferase reporter. A parallel **counter-screen** with a nonsense-mutated chimera filters out false positives (general transcriptional activators, HDAC inhibitors) from true PXR agonists.
+**Assay design:** PXR agonism is measured using a reporter cell line in which a chimeric receptor construct — the PXR ligand-binding domain grafted onto a heterologous DNA-binding domain — drives luciferase expression upon activation. A critical feature of the assay is the paired counter-screen: an identical experiment is run in parallel using a construct carrying a non-functional point mutant of the same chimeric receptor. Any compound that activates both the active and mutant constructs is classified as a non-specific transcriptional activator (e.g. an HDAC inhibitor) rather than a genuine PXR agonist, and is removed from the potency analysis. Only compounds that selectively activate the functional construct are retained.
 
-**The test set is not a random sample.** It comprises 513 Enamine on-demand analogs of the 63 most potent and selective hits (ECFP4 Tanimoto > 0.4 to any of the 63). This **analog expansion design** deliberately creates activity cliffs and SAR challenges — exactly what real lead optimisation looks like.
+**The test set is not a random sample.** Rather than drawing compounds at random from the screening library, 513 Enamine on-demand analogs were selected around the 63 most potent and selective hits (ECFP4 Tanimoto similarity > 0.4 to at least one of the 63 seed compounds). This **analog expansion design** places the prediction task squarely in lead optimisation territory — small structural changes within active series that may produce large potency differences — rather than in broad virtual screening.
 
 | Phase | Dates | Description |
 |---|---|---|
@@ -64,7 +64,7 @@ Dose-response curves (4,325 compounds, 8-concentration)
 63 selective hits → Enamine analog expansion → 513 test compounds
 ```
 
-The competition released **4,140 compounds with pEC50 labels** as training data. Each has both a PXR pEC50 and a counter-screen pEC50, giving a **selectivity delta**:
+The competition released **4,139 compounds with pEC50 labels** as training data. Each has both a PXR pEC50 and a counter-screen pEC50, giving a **selectivity delta**:
 
 ```
 selectivity_delta = pEC50(PXR) − pEC50(counter-screen)
@@ -72,15 +72,15 @@ selectivity_delta = pEC50(PXR) − pEC50(counter-screen)
 
 ### Finding the right training set
 
-This was the most consequential decision in the project. Every threshold was tested systematically:
+This was the most consequential decision in the project. Every threshold was tested systematically using Chemprop (D-MPNN + 61 RDKit descriptors) as the evaluation model, with all leaderboard results from blind test set submissions:
 
-| Dataset | Compounds | Filter | Leaderboard MAE | Verdict |
-|---|---|---|---|---|
-| `clean_train.csv` | 2,948 | delta > 1.5 | not submitted | Starting point |
-| **`clean_train2.csv`** | **3,743** | **delta > 0** | **0.4622 (Chemprop)** | ✅ **FINAL** |
-| `clean_train1.csv` | 2,912 | Emax ≥ 0.75 | 0.4674 | ❌ Filter too aggressive |
-| Relaxed (delta ≥ −0.6) | 4,054 | — | 0.4809 | ❌ Non-selective compounds contaminate |
-| Unfiltered | 4,139 | None | worse | ❌ Rejected |
+| Dataset | Compounds | Filter | LB MAE | RAE | R² | Spearman ρ | Verdict |
+|---|---|---|---|---|---|---|---|
+| `clean_train.csv` | 2,948 | delta > 1.5 | 0.4794 | 0.6017 | 0.4799 | 0.8042 | Starting point |
+| **`clean_train2.csv`** | **3,743** | **delta > 0** | **0.4622** | **0.5800** | **0.5117** | **0.8137** | ✅ **FINAL** |
+| + 37 ChEMBL compounds | 3,780 | delta > 0 + external | 0.5051 | 0.6338 | 0.4094 | 0.7420 | ❌ Assay heterogeneity |
+| Relaxed (delta ≥ −0.6) | 4,054 | — | 0.4809 | 0.6036 | 0.5008 | 0.8097 | ❌ Non-selective compounds contaminate |
+| Unfiltered | 4,139 | None | 0.5095 | 0.6397 | 0.4799 | 0.8025 | ❌ Rejected |
 
 **The biological logic:** The 513 test compounds are analogs of hits with selectivity delta ≥ 1.5. The training set that best represents this population is one filtered by *positive* selectivity — delta > 0 captures compounds that show some PXR preference over the counter-screen, without forcing the strict 1.5-unit threshold that would discard useful potency information from moderate hits.
 
@@ -146,7 +146,20 @@ This result established that RDKit descriptors + ECFP4 fingerprints + classical 
 
 ### Chemprop (2D Message-Passing Neural Network)
 
-<a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">Chemprop</a> implements a directed message-passing neural network (D-MPNN) on 2D molecular graphs. It was augmented with **61 PXR-specific physicochemical descriptors** computed via RDKit:
+<a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">Chemprop</a> implements a directed message-passing neural network (D-MPNN) that learns molecular representations by iteratively aggregating atom and bond features across 2D graph neighbourhoods. The development of the final Chemprop model followed three successive improvements, each reducing MAE and RAE in a measurable, interpretable way.
+
+**Step 1 — Graph topology alone is insufficient.** The first Chemprop model (v4_1) was trained on 2,948 compounds using molecular graph features only. Despite the architectural superiority of D-MPNN over classical ML, this model performed *worse* than the RDKit+ECFP4 baseline:
+
+| Metric | Classical ML baseline | Chemprop v4_1 (no descriptors) |
+|---|---|---|
+| LB MAE | 0.5196 | 0.5289 |
+| RAE | 0.6526 | 0.6641 |
+| R² | 0.457 | 0.4183 |
+| Spearman ρ | 0.7258 | 0.7324 |
+
+The result demonstrates a key property of PXR: its unusually large and flexible ligand-binding pocket means that activity is governed as much by bulk physicochemical properties (lipophilicity, shape, polarity) as by precise 2D topology. A graph network that only sees atom connectivity cannot recover these features from structure alone.
+
+**Step 2 — Domain-informed descriptors break the ceiling.** 61 PXR-specific physicochemical descriptors were computed via RDKit and concatenated to the graph-level representation at the readout layer:
 
 - Lipophilicity & polarity: LogP, TPSA, polar surface ratio, MolMR
 - Shape: Kappa1/2/3, NPR1/NPR2, Asphericity, FractionCSP3
@@ -154,31 +167,48 @@ This result established that RDKit descriptors + ECFP4 fingerprints + classical 
 - PXR-relevant pharmacophores: sulfoxide count, ketone count, hydroxyl, Michael acceptors, electrophilic sp² centres
 - Drug-likeness: QED, HBA, HBD, rotatable bonds, TPSA, Labute ASA
 
-**Final configuration (v4_3_3):**
+The effect on the same 2,948-compound training set was substantial:
 
-| Parameter | Value | Why |
-|---|---|---|
-| Loss | MSE | Huber and MAE/L1 both tested, both worse |
-| Y-scaler | RobustScaler (1–99%) | Robust to high-pEC50 outliers |
-| Sample weights | None | Uniform weighting is optimal |
-| CV | 10-fold activity-stratified scaffold | Simulates novel scaffold prediction |
-| Ensemble | 1/MAE weighted across folds | Lower-MAE folds contribute more |
-| **OOF MAE** | **0.4420** | |
-| **LB MAE** | **0.4622 (Rank 36)** | |
-
-**Cross-validation fold count matters enormously.** Fold counts of 10, 15, and 20 were evaluated:
-
-| Folds | Val set/fold | LB MAE | Rank |
+| Metric | No descriptors | + 61 descriptors | Δ |
 |---|---|---|---|
-| **10** | ~374 | **0.4622** | **36** ✅ |
-| 15 | ~250 | 0.4702 | 48 ❌ |
-| 20 | ~187 | 0.4750 | 52 ❌ |
+| LB MAE | 0.5289 | 0.4794 | ↓ 0.050 (−9.4%) |
+| RAE | 0.6641 | 0.6017 | ↓ 0.062 (−9.4%) |
+| R² | 0.4183 | 0.4799 | ↑ 0.062 |
+| Spearman ρ | 0.7324 | 0.8042 | ↑ 0.072 |
+| Kendall's τ | 0.5405 | 0.6143 | ↑ 0.074 |
 
-Smaller validation sets make early stopping unreliable — the model terminates too early or too late based on noise, producing inconsistent fold quality.
+A 9.4% simultaneous reduction in both MAE and RAE from a single feature engineering step is the largest single-step gain in the entire project. Explicit encoding of lipophilicity, molecular shape, and pharmacophore counts provides the model with the physicochemical language PXR uses to recognise ligands — information that 2D graph topology cannot recover on its own.
+
+**Step 3 — Expanding the training set with biologically coherent compounds.** Relaxing the selectivity filter from delta > 1.5 to delta > 0 added 795 compounds to the training set (2,948 → 3,743). Combined with tuned hyperparameters (MSE loss, RobustScaler, 10-fold activity-stratified scaffold CV, 1/MAE fold weighting), this yielded the final v4_3_3 configuration:
+
+| Metric | v4_1 + descriptors (2,948) | v4_3_3 (3,743) | Δ |
+|---|---|---|---|
+| LB MAE | 0.4794 | 0.4622 | ↓ 0.017 (−3.6%) |
+| RAE | 0.6017 | 0.5800 | ↓ 0.022 (−3.6%) |
+
+**CV fold count sensitivity.** Fold counts of 10, 15, and 20 were evaluated on the 3,743-compound set:
+
+| Folds | Val set/fold | LB MAE | RAE |
+|---|---|---|---|
+| **10** | ~374 | **0.4622** | **0.5800** ✅ |
+| 15 | ~250 | 0.4702 | 0.5903 ❌ |
+| 20 | ~187 | 0.4750 | 0.5963 ❌ |
+
+Smaller validation sets destabilise early stopping — the model terminates too early or too late based on noise, producing inconsistent fold quality and degraded ensemble performance.
+
+**The cumulative Chemprop journey:**
+
+| Stage | LB MAE | RAE | Δ MAE vs start |
+|---|---|---|---|
+| D-MPNN, no descriptors (2,948) | 0.5289 | 0.6641 | — |
+| + 61 PXR descriptors (2,948) | 0.4794 | 0.6017 | ↓ 0.050 |
+| + expanded training set (3,743) + tuning | **0.4622** | **0.5800** | ↓ 0.067 (−12.7%) |
+
+Each improvement was independently motivated by domain knowledge and validated on the blind leaderboard, not on cross-validation alone.
 
 ### UniMol (3D Molecular Transformer)
 
-<a href="https://github.com/deepmodeling/Uni-Mol" target="_blank" rel="noopener noreferrer">UniMol</a> is a universal 3D molecular pretraining framework. It operates on explicit 3D atomic coordinates (ETKDG v3 conformers, hydrogens retained), capturing spatial relationships invisible to 2D graph methods.
+<a href="https://github.com/deepmodeling/Uni-Mol" target="_blank" rel="noopener noreferrer">UniMol</a> is a transformer-based molecular foundation model pre-trained on three-dimensional atomic coordinates rather than 2D bond graphs. Input conformers are generated using the ETKDG v3 algorithm with all hydrogens retained, giving the model access to inter-atomic distances, angles, and steric contacts that 2D message-passing architectures cannot observe.
 
 - **Pretraining:** 200 million molecular conformers (UniMol v2, 84M parameters)
 - **Fine-tuning:** 3,743 competition compounds, 8-fold scaffold CV on Kaggle T4 × 2 GPU
@@ -255,30 +285,31 @@ The third model — UniMol trained on the smaller 2,948-compound set — was ret
 | R² | **0.5459** | 0.5117 | 0.5515 |
 | Spearman ρ | **0.8463** | 0.8137 | 0.8306 |
 | Kendall's τ | **0.6567** | 0.6245 | 0.6391 |
-| Rank | **35** | 36 | 33 |
+| Rank | **39** | 36 | 33 |
 
 Net improvement from initial Chemprop baseline to final blend: **~0.023 MAE units**, achieved entirely through data curation, architecture selection, hyperparameter optimisation, and ensemble design — no proprietary data, no additional assay measurements.
 
 ---
 
-## What Top Teams Are Likely Doing Differently
+## Conclusion
 
-The gap between the best submission (MAE 0.4468) and the leaderboard leader (MAE 0.3912) is 12.5%. More informatively, the leaderboard leader achieved **R² = 0.6634 vs 0.5459** for the submitted model — an 11 percentage point difference in explained variance. This magnitude cannot come from hyperparameter tuning or more data of the same type; it requires capturing a fundamentally different source of molecular signal.
+The Phase 1 submission achieved **MAE 0.4468, RAE 0.5606, R² 0.5459, Spearman 0.8463, Kendall's τ 0.6567 (Rank 39)** against the blind test set of 513 PXR analog compounds. The final leaderboard (top team: MAE 0.3842, R² 0.7254) allows an honest assessment of where the approach succeeded and where it fell short.
 
-### 3D structure-based modelling
+### Strengths
 
-PXR has well-characterised crystal structures with bound ligands (PDB: 1ILG, 1M13, 3CTB, 3HVL and others). Top teams are almost certainly using **<a href="https://github.com/gnina/gnina" target="_blank" rel="noopener noreferrer">GNINA</a>** — an open-source neural network scoring function that generates docked poses and scores them using a CNN trained on protein-ligand affinity data. Unlike classical AutoDock Vina scores (raw force-field estimates), GNINA produces binding affinity estimates that are semantically comparable to pEC50.
+**Compound ranking is competitive.** The Spearman correlation of 0.8463 is within 0.010 of the top-ranked submission (0.856), and Kendall's τ of 0.6567 is similarly close to the best (0.6693). This indicates that the ensemble correctly orders compounds by relative potency within the test set — a practically useful property for prioritising compounds in lead optimisation.
 
-Docking was attempted: AutoDock Vina scores used as an additional descriptor caused rank to drop from 26 to 55. The lesson is that *how* docking is incorporated matters enormously. Vina raw scores add noise; learned scoring functions add signal.
+**Every modelling decision was grounded in data.** The training set filter (delta > 0), the descriptor set, the cross-validation strategy, and the ensemble weights were all validated on the blind leaderboard rather than on internal cross-validation alone. The systematic ablation — from classical ML through descriptor augmentation to 3D transformers — produced interpretable, reproducible improvements at each step.
 
-### Multi-task learning (done correctly)
+**Fully open.** The entire pipeline uses open-source tools (Chemprop, UniMol, RDKit) and the competition's public training data. No proprietary databases, commercial docking software, or additional assay measurements were used.
 
-Training a single MPNN with separate output heads for pEC50 regression, log₂FC regression from single-concentration data, and binary hit classification — all simultaneously — allows the shared message-passing encoder to benefit from all three signals without the "wrong prior" problem of sequential pre-training.
+### Weaknesses and Areas for Improvement
 
-### Newer foundation models
+**Absolute potency prediction is the primary gap.** The R² of 0.5459 versus the top team's 0.7254 reveals that 17 additional percentage points of variance remain unexplained. This gap is concentrated in the high-potency tail: only 64 of 3,743 training compounds (1.7%) have pEC50 ≥ 6, leaving the model without sufficient scaffold anchors to extrapolate potency within the most active analog series.
 
-<a href="https://arxiv.org/abs/2406.14969" target="_blank" rel="noopener noreferrer">Uni-Mol2</a> (2024, scaling up to 1.1B parameters) and 3D-aware equivariant networks (MACE-OFF, NequIP) represent the current frontier. With 84M-parameter UniMol v2, a strong foundation was already in use, but the performance gap suggests the leading teams may be using larger or more recently fine-tuned models.
+**Docking information was not successfully incorporated.** AutoDock Vina scores added as descriptors worsened performance (MAE 0.5095 at rank 120 when combined with unfiltered data). Raw force-field docking scores introduce noise rather than signal; learned scoring functions trained on protein-ligand affinity data would be required to capture genuine 3D binding geometry.
 
+**Single-concentration data was not fully exploited.** The sequential pre-training approach (binary classifier → regression fine-tuning) failed because it encoded the wrong objective. A multi-task learning setup — simultaneous training on pEC50 regression and binary hit classification with shared encoder weights — remains untested and is the most promising direction for Phase 2.
 
 ---
 
@@ -297,6 +328,6 @@ Training a single MPNN with separate output heads for pEC50 regression, log₂FC
 - **Data:** <a href="https://huggingface.co/datasets/openadmet/pxr-challenge-train-test" target="_blank" rel="noopener noreferrer">HuggingFace dataset: openadmet/pxr-challenge-train-test</a>
 - **Tutorial:** <a href="https://github.com/OpenADMET/PXR-Challenge-Tutorial" target="_blank" rel="noopener noreferrer">OpenADMET PXR Challenge Tutorial (GitHub)</a>
 - **Chemprop:** <a href="https://github.com/chemprop/chemprop" target="_blank" rel="noopener noreferrer">github.com/chemprop/chemprop</a> · <a href="https://doi.org/10.1021/acs.jcim.3c01250" target="_blank" rel="noopener noreferrer">Heid et al., JCIM 2024</a>
-- **UniMol:** <a href="https://github.com/deepmodeling/Uni-Mol" target="_blank" rel="noopener noreferrer">github.com/dptech-corp/Uni-Mol</a> · <a href="https://openreview.net/forum?id=6K2RM6wVqKu" target="_blank" rel="noopener noreferrer">Zhou et al., ICLR 2023</a>
+- **UniMol:** <a href="https://github.com/deepmodeling/Uni-Mol" target="_blank" rel="noopener noreferrer">github.com/deepmodeling/Uni-Mol</a> · <a href="https://openreview.net/forum?id=6K2RM6wVqKu" target="_blank" rel="noopener noreferrer">Zhou et al., ICLR 2023</a>
 - **GNINA:** <a href="https://github.com/gnina/gnina" target="_blank" rel="noopener noreferrer">github.com/gnina/gnina</a> · <a href="https://doi.org/10.1186/s13321-021-00522-2" target="_blank" rel="noopener noreferrer">McNutt et al., J Cheminform 2021</a>
 - **RDKit:** <a href="https://www.rdkit.org" target="_blank" rel="noopener noreferrer">www.rdkit.org</a>
