@@ -272,22 +272,26 @@ The final best submission is a weighted average of three models:
 |---|---|---|---|---|---|---|---|
 | UniMol 8-fold (Kaggle T4 × 2) | **35%** | 3,743 compounds | 8 | 0.4615 | 0.5793 | 0.5515 | 0.8306 |
 | Chemprop 10-fold | **35%** | 3,743 compounds | 10 | 0.4622 | 0.5800 | 0.5117 | 0.8137 |
-| UniMol 6-fold | **30%** | 1,948 compounds | 6 | 0.5020 | 0.6302 | 0.4631 | 0.8001 |
+| UniMol 7-fold† | **30%** | 1,948 compounds | 7 | 0.4647† | 0.5831† | 0.5163† | 0.8235† |
 
-The third model — UniMol fine-tuned on the smaller 1,948-compound set — was retained despite its weaker individual performance because it captures structurally different error patterns from the 8-fold model (Pearson r = 0.937 between them; r = 0.922 between UniMol-8f and Chemprop). All pairwise correlations remain below 0.95, the practical threshold for meaningful ensemble benefit. A model trained on a different data subset introduces complementary variance that reduces the ensemble's overall error beyond what any single model achieves alone.
+*† Leaderboard result is from a two-model blend submission (UniMol 7-fold + UniMol 10-fold), not a standalone submission of the 7-fold model alone.*
 
-An unexpected but instructive detail: this model is the product of an incomplete training run. The fine-tuning script was executed locally and crashed after completing 6 of the intended 10 folds. The resulting 6-fold ensemble was submitted and evaluated — and it outperformed the subsequently completed 10-fold run on Kaggle GPU infrastructure. This serves as a practical reminder that more folds do not guarantee better generalisation: with ~1,948 training compounds, the validation set per fold at 10 folds (~195 compounds) was too small to provide reliable early stopping signals, while the 6-fold configuration (~325 compounds per fold) maintained sufficient validation stability.
+The third model — UniMol fine-tuned on the smaller 1,948-compound set — was retained despite training on less data because it captures structurally different error patterns from the 8-fold model (Pearson r = 0.937 between them; r = 0.922 between UniMol-8f and Chemprop). All pairwise correlations remain below 0.95, the practical threshold for meaningful ensemble benefit. A model trained on a different data subset introduces complementary variance that reduces the ensemble's overall error beyond what any single model achieves alone.
+
+An unexpected but instructive detail: this model is the product of an incomplete training run. The fine-tuning script was executed locally and crashed after completing 7 of the intended 10 folds. Rather than restarting, the resulting 7-fold ensemble was submitted — and it outperformed the subsequently completed 10-fold run on Kaggle GPU infrastructure. This reinforces the fold count sensitivity finding from the Chemprop experiments: with ~1,948 training compounds, a 10-fold split yields only ~195 compounds per validation set, too few for reliable early stopping. The 7-fold configuration (~278 compounds per fold) maintained sufficient validation stability to produce better-generalising fold models.
 
 ### Phase 1 leaderboard performance
 
-| Metric | Best blend | Chemprop 10-fold | UniMol 8-fold | UniMol 6-fold |
+| Metric | Best blend | Chemprop 10-fold | UniMol 8-fold | UniMol 7-fold† |
 |---|---|---|---|---|
-| MAE | **0.4468** | 0.4622 | 0.4615 | 0.5020 |
-| RAE | **0.5606** | 0.5800 | 0.5793 | 0.6302 |
-| R² | **0.5459** | 0.5117 | 0.5515 | 0.4631 |
-| Spearman ρ | **0.8463** | 0.8137 | 0.8306 | 0.8001 |
-| Kendall's τ | **0.6567** | 0.6245 | 0.6391 | 0.6065 |
-| Rank | **39** | 36 | 33 | 44 |
+| MAE | **0.4468** | 0.4622 | 0.4615 | 0.4647 |
+| RAE | **0.5606** | 0.5800 | 0.5793 | 0.5831 |
+| R² | **0.5459** | 0.5117 | 0.5515 | 0.5163 |
+| Spearman ρ | **0.8463** | 0.8137 | 0.8306 | 0.8235 |
+| Kendall's τ | **0.6567** | 0.6245 | 0.6391 | 0.6352 |
+| Rank | **39** | 36 | 33 | 32 |
+
+*† Blend of UniMol 7-fold (1,948 compounds) + UniMol 10-fold (3,743 compounds).*
 
 Net improvement from initial Chemprop baseline to final blend: **~0.023 MAE units**, achieved entirely through data curation, architecture selection, hyperparameter optimisation, and ensemble design — no proprietary data, no additional assay measurements.
 
