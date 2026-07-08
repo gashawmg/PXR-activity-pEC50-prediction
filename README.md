@@ -183,7 +183,7 @@ All pairwise model correlations < 0.95, confirming meaningful ensemble diversity
 
 ## Phase 2 — Refinement with Unblinded Labels
 
-> **Final submission:** RAE **0.5298** · MAE **0.4231** · R² **0.6236** · Spearman **0.8389** · Kendall's τ **0.6486**  
+> **Final submission:** MAE **0.4231** .RAE **0.5841** ·   R² **0.5528** · Spearman **0.8028** · Kendall's τ **0.6221** · Rank **12** 
 > `submission_final_3way_513.csv` — 513 compounds — 70% × (48% v4_4 + 52% v4_13d) + 30% UniMol
 
 ### What the Unblinded Labels Revealed
