@@ -1,7 +1,7 @@
 # Predicting PXR Induction Potency — OpenADMET Blind Challenge
 
 > **Phase 1:** MAE **0.4468** · RAE **0.5606** · R² **0.5459** · Spearman **0.8463** · Kendall's τ **0.6567** · Rank **39**  
-> **Phase 2 (final):** MAE **0.4231** .RAE **0.5841** ·   R² **0.5528** · Spearman **0.8028** · Kendall's τ **0.6221**  
+> **Phase 2 (final):** MAE **0.4231** .RAE **0.5841** ·   R² **0.5528** · Spearman **0.8028** · Kendall's τ **0.6221** · Rank **12**   
 > 3-way blend · Chemprop D-MPNN + MultitaskMPNN + UniMol 3D transformer · No proprietary data
 
 ---
